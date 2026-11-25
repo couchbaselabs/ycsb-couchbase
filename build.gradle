@@ -5,34 +5,48 @@ plugins {
     id 'java-library'
     id 'distribution'
     id 'application'
+    id 'com.google.protobuf' version '0.9.5'
     id 'org.jreleaser' version '1.24.0'
 }
 
 group = 'com.codelry.util.ycsb.couchbase'
-version = '3.0.3'
+version = '3.0.4'
 
 repositories {
+    mavenLocal()
     mavenCentral()
+    maven { url 'https://mobile.maven.couchbase.com/maven2/dev/' }
 }
 
+def protobufVersion = '4.29.3'
+def cbliteVersion = '4.1.2'
+
 dependencies {
-    implementation 'com.codelry.util.ycsb:ycsb-core:0.18.6'
+    implementation 'com.codelry.util.ycsb:ycsb-core:0.18.8'
     implementation 'com.codelry.util:restfull-core:1.0.5'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
-    implementation 'com.couchbase.client:java-client:3.12.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.4'
+    implementation 'com.couchbase.client:java-client:3.13.1'
+    implementation "com.couchbase.lite:couchbase-lite-java-ee:${cbliteVersion}"
     implementation 'com.google.code.gson:gson:2.14.0'
-    implementation 'com.codelry.util:couchbase-connect-sdk3:1.2.2'
-    implementation 'org.apache.logging.log4j:log4j-core:2.26.0'
+    implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+    implementation 'com.codelry.util:couchbase-connect-sdk3:1.2.6'
+    implementation 'org.apache.logging.log4j:log4j-core:2.26.1'
     implementation 'commons-cli:commons-cli:1.11.0'
-    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.4.Final:osx-aarch_64'
-    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.4.Final:osx-x86_64'
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.21.Final:osx-aarch_64'
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.21.Final:osx-x86_64'
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation platform('org.testcontainers:testcontainers-bom:2.0.5')
     testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
     testImplementation 'org.testcontainers:testcontainers'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
 }
 
 java {
@@ -56,6 +70,8 @@ def requestedTasks = gradle.startParameter.taskNames.collect { it.toLowerCase() 
 tasks.named('test') {
     useJUnitPlatform()
     environment 'TESTCONTAINERS_REUSE_ENABLE', 'true'
+    // Fixed Couchbase ports allow only one container at a time.
+    maxParallelForks = 1
     onlyIf {
         requestedTasks.any { it.contains('test') }
     }
@@ -161,6 +177,12 @@ jreleaser {
             repoOwner = 'mminichino'
             name = 'ycsb-couchbase'
             branch = 'main'
+            // Recreate the GitHub release for the current build.gradle version on each publish.
+            overwrite = true
+            // Avoid listing/closing milestones; GITHUB_TOKEN with contents:write cannot use that API.
+            milestone {
+                close = false
+            }
             changelog {
                 enabled = false
             }

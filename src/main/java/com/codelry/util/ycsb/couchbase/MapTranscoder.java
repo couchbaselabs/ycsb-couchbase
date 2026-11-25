@@ -24,7 +24,9 @@ public class MapTranscoder implements Transcoder {
   private static final ObjectMapper mapper;
   private static final ObjectWriter writer;
   private static final ObjectReader mapReader;
+  private static final ObjectReader hashMapReader;
   private static final TypeReference<Map<String, ByteIterator>> mapTypeRef = new TypeReference<>() {};
+  private static final TypeReference<HashMap<String, ByteIterator>> hashMapTypeRef = new TypeReference<>() {};
   public static final MapTranscoder INSTANCE;
 
   static {
@@ -35,7 +37,35 @@ public class MapTranscoder implements Transcoder {
     mapper.registerModule(module);
     writer = mapper.writer();
     mapReader = mapper.readerFor(mapTypeRef);
+    hashMapReader = mapper.readerFor(hashMapTypeRef);
     INSTANCE = new MapTranscoder();
+  }
+
+  /**
+   * Decode a document body into a YCSB record in a single Jackson pass.
+   */
+  public static HashMap<String, ByteIterator> decodeRecord(byte[] json) {
+    try {
+      return hashMapReader.readValue(json);
+    } catch (Throwable e) {
+      throw new DecodingFailureException(e);
+    }
+  }
+
+  public static Map<String, ByteIterator> decodeMapRecord(byte[] json) {
+    try {
+      return mapReader.readValue(json);
+    } catch (Throwable e) {
+      throw new DecodingFailureException(e);
+    }
+  }
+
+  public static byte[] encodeMapRecord(Map<String, ByteIterator> map) {
+    try {
+      return new EncodedValue(writer.writeValueAsBytes(map), CodecFlags.JSON_COMPAT_FLAGS).encoded();
+    } catch (Throwable t) {
+      throw new EncodingFailureException("Serializing of content + " + redactUser(map) + " to JSON failed.", t);
+    }
   }
 
   private MapTranscoder() {
@@ -63,13 +93,12 @@ public class MapTranscoder implements Transcoder {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T> T decode(final Class<T> target, final byte[] input, int flags) {
     if (target.equals(byte[].class)) {
       return (T) input;
     } else if (target.equals(Map.class) || target.equals(HashMap.class)) {
       try {
-        return (T) mapReader.readValue(input);
+        return mapReader.readValue(input);
       } catch (Throwable e) {
         throw new DecodingFailureException(e);
       }
