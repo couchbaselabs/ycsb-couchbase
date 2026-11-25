@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Nothing was added in this release
+
+### Changed
+
+- Updated Couchbase Java SDK (java-client) to 3.13.1
+- Updated dcp-client to 0.58.0
+- Updated reactor-core to 3.6.9 and reactor-extra / reactor-adapter to 3.5.2 to match the SDK
+
+### Fixed
+
+- No bug fixes in this release
+
+### Removed
+
+- Nothing was removed in this release
+
 ## [2.0.5]
 
 ### Added

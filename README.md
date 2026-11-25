@@ -1,5 +1,5 @@
 # Couchbase YCSB 2.0.5
-This pacakge is a YCSB implementation to test against a Couchbase cluster. It uses YCSB core 0.18.0 and the Couchbase Java SDK v3.5.
+This pacakge is a YCSB implementation to test against a Couchbase cluster. It uses YCSB core 0.18.0 and the Couchbase Java SDK v3.13.1.
 
 ## Requirements
 - Java 11 or higher
